@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arabic Reading Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-primary: #ffffff;
+    --text-secondary: #b0c4de;
+    --accent: #00d2ff;
+    --accent-hover: #3a7bd5;
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+body {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    animation: fadeIn 0.4s ease-out;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.screen.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 40px;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    text-align: center;
+}
+
+h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.mode-btn, .level-btn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px 40px;
+    color: white;
+    font-size: 24px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 15px;
+    transition: all 0.3s ease;
+    box-shadow: var(--card-shadow);
+    width: 90%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.mode-btn:hover, .level-btn:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--accent);
+    box-shadow: 0 12px 40px 0 rgba(0, 210, 255, 0.3);
+}
+
+.mode-btn small, .level-btn small {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.mode-btn.time {
+    border-color: rgba(255, 65, 108, 0.5);
+}
+
+.mode-btn.time:hover {
+    border-color: #ff416c;
+    box-shadow: 0 12px 40px 0 rgba(255, 65, 108, 0.3);
+    background: rgba(255, 65, 108, 0.15);
+}
+
+.level-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 90%;
+    max-width: 600px;
+}
+.level-grid .level-btn {
+    width: auto;
+    margin: 0;
+    padding: 20px 10px;
+    font-size: 22px;
+}
+.level-grid .random {
+    grid-column: span 2;
+    background: linear-gradient(45deg, #8a2387, #e94057, #f27121);
+    border: none;
+}
+.level-grid .random:hover {
+    box-shadow: 0 12px 40px 0 rgba(233, 64, 87, 0.4);
+    transform: translateY(-5px) scale(1.02);
+}
+
+/* Game Screen */
+.top-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    z-index: 10;
+}
+
+.back-btn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(5px);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 16px;
+    transition: 0.3s;
+}
+.back-btn:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+}
+
+#timer {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ff416c;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 65, 108, 0.3);
+}
+
+#word-counter {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    background: var(--glass-bg);
+    padding: 12px 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+    border: 1px solid var(--glass-border);
+}
+
+.hidden {
+    display: none !important;
+}
+
+#slide {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    direction: rtl;
+    font-family: 'Amiri', serif;
+    width: 100%;
+    margin-top: 50px;
+}
+
+.separated span {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    font-size: clamp(48px, 10vw, 120px);
+    margin: 10px;
+    font-weight: 800;
+}
+
+.separated span:hover {
+    transform: scale(1.1);
+}
+
+.connected-container {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    border-radius: 25px;
+    padding: 10px 40px;
+    margin-top: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    text-align: center;
+}
+
+.connected-container span {
+    display: inline;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    font-size: clamp(56px, 12vw, 140px);
+    font-weight: 800;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 40px;
+    width: 100%;
+    box-sizing: border-box;
+    position: absolute;
+    bottom: 0;
+}
+
+.nav-btn {
+    font-size: 18px;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 15px;
+    background: var(--accent);
+    color: #0f2027;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(0, 210, 255, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 210, 255, 0.6);
+}
+
+.nav-btn:active {
+    transform: translateY(2px);
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1f4037, #99f2c8);
+    padding: 50px;
+    border-radius: 30px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.3);
+    transform: scale(0.8);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: #0f2027;
+}
+
+.modal.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-content h2 {
+    font-size: 42px;
+    margin-bottom: 15px;
+    color: #0f2027;
+    text-shadow: none;
+}
+
+.modal-content p {
+    font-size: 28px;
+    margin-bottom: 40px;
+    font-weight: 600;
+}
+
+.modal-content button {
+    font-size: 20px;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 15px;
+    margin: 10px;
+    cursor: pointer;
+    font-weight: 800;
+    font-family: inherit;
+    transition: 0.3s;
+}
+
+.modal-content button:first-of-type {
+    background: rgba(0,0,0,0.1);
+    color: #0f2027;
+}
+.modal-content button:first-of-type:hover {
+    background: rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+}
+
+.modal-content button:last-of-type {
+    background: #0f2027;
+    color: white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+.modal-content button:last-of-type:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Back button in Level Menu */
+#level-menu .back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+</style>
+</head>
+<body>
+
+<div id="main-menu" class="screen active">
+    <h1>Arabic Reader<br><span style="color:var(--accent)">Pro</span></h1>
+    <button class="mode-btn" onclick="selectMode('practice')">
+        Practice Mode
+        <small>Unlimited Time • Learn at your own pace</small>
+    </button>
+    <button class="mode-btn time" onclick="selectMode('time')">
+        Time Mode
+        <small>Choose your time • Beat the clock!</small>
+    </button>
+</div>
+
+<div id="time-menu" class="screen">
+    <button class="back-btn" onclick="showScreen('main-menu')">⬅ Back</button>
+    <h2>Select Time Limit</h2>
+    <div class="level-grid">
+        <button class="level-btn" onclick="selectTime(10)">10 Seconds</button>
+        <button class="level-btn" onclick="selectTime(20)">20 Seconds</button>
+        <button class="level-btn" onclick="selectTime(30)">30 Seconds</button>
+        <button class="level-btn" onclick="selectTime(60)">60 Seconds</button>
+    </div>
+</div>
+
+<div id="level-menu" class="screen">
+    <button class="back-btn" onclick="backFromLevels()">⬅ Back</button>
+    <h2>Select Level</h2>
+    <div class="level-grid">
+        <button class="level-btn" onclick="startLevel(1)">Level 1<br><small>2 Letters</small></button>
+        <button class="level-btn" onclick="startLevel(2)">Level 2<br><small>3 Letters</small></button>
+        <button class="level-btn" onclick="startLevel(3)">Level 3<br><small>4 Letters</small></button>
+        <button class="level-btn" onclick="startLevel(4)">Level 4<br><small>5 Letters</small></button>
+        <button class="level-btn" onclick="startLevel(5)">Level 5<br><small>6+ Letters</small></button>
+        <button class="level-btn random" onclick="startLevel(6)">Level 6<br><small>All Words Random</small></button>
+    </div>
+</div>
+
+<div id="game-screen" class="screen">
+    <div class="top-bar">
+        <button class="back-btn" onclick="showScreen('level-menu')">⬅ Levels</button>
+        <div id="timer" class="hidden">⏱ <span id="time-left">60</span>s</div>
+        <div id="word-counter">Words: 0</div>
+    </div>
+    
+    <div id="slide">
+        <div id="separated" class="separated"></div>
+        <div id="connected" class="connected-container" style="display:none;"></div>
+    </div>
+
+    <div class="controls">
+        <button class="nav-btn" onclick="prevWord()">⬅ Back</button>
+        <button class="nav-btn" onclick="nextWord()">Next ➡</button>
+    </div>
+</div>
+
+<div id="time-up-modal" class="modal">
+    <div class="modal-content">
+        <h2>Time's Up! ⏰</h2>
+        <p>You reviewed <span id="final-score" style="color:#e74c3c; font-size: 36px; font-weight:800;">0</span> words!</p>
+        <button onclick="closeModal(); showScreen('level-menu')">Choose Level</button>
+        <button onclick="closeModal(); startLevel(currentLevel)">Try Again ↻</button>
+    </div>
+</div>
+
+<script>
+const allWords = [
+    // 2 letters (Level 0)
+    "أُمٌّ", "أَبٌ", "أَخٌ", "يَدٌ", "دَمٌ", "فَمٌ", "مَنْ", "كَمْ", "لَمْ", "هَلْ", "بَلْ", "فِي", "لَا",
+    
+    // 3 letters
+    "جَمَلٌ","قَلَمٌ","دَرْسٌ","بَيْتٌ","شَمْسٌ","قَمَرٌ","مَاءٌ","نُورٌ","لَيْلٌ",
+    "بَابٌ","أَرْضٌ","وَرَقٌ","زَهْرٌ","حَبٌّ","حِبْرٌ","طِفْلٌ","رَجُلٌ",
+    "كَلْبٌ","قِطٌّ","سَمَكٌ","خُبْزٌ","لَحْمٌ","أُذُنٌ","عَيْنٌ",
+    "رِجْلٌ","رَأْسٌ","قَلْبٌ","حَقٌّ","صِدْقٌ","عِلْمٌ","عَمَلٌ","دِينٌ",
+    "بَحْرٌ", "رَمْلٌ", "نَارٌ", "هَوَاءٌ", "طَيْرٌ", "ثَوْبٌ", "صَوْتٌ",
+    "صَيْفٌ", "شِتَاءٌ", "رَبِيعٌ", "خَرِيفٌ",
+    
+    // 4 letters
+    "كِتَابٌ","نَهَارٌ","سَمَاءٌ","سَبِيلٌ","طَرِيقٌ","مَسْجِدٌ","مَرْأَةٌ","طَعَامٌ","شَرَابٌ",
+    "مَكْتَبٌ", "مَلْعَبٌ", "دَفْتَرٌ", "مَطْبَخٌ", "مَسَاءٌ", "عَصِيرٌ", "حَلِيبٌ",
+    "لِبَاسٌ", "نَظِيفٌ", "جَمِيلٌ", "صَغِيرٌ", "كَبِيرٌ", "سَرِيعٌ", "بَطِيءٌ",
+    "قَصِيرٌ", "طَوِيلٌ", "سَهْلٌ", "صَعْبٌ", "قَرِيبٌ", "بَعِيدٌ",
+    
+    // 5 letters
+    "مَدْرَسَةٌ","فَاكِهَةٌ", "حَدِيقَةٌ", "أُسْتَاذٌ", "صَبَاحٌ", "طَبِيعَةٌ",
+    "مَكْتَبَةٌ", "تِلْفَازٌ", "مُعَلِّمٌ", "طَالِبَةٌ", "مُمَرِّضٌ", "دَرَّاجَةٌ", "طَائِرَةٌ",
+    "سَيَّارَةٌ", "مُسَافِرٌ", "مُهَنْدِسٌ", "مُحَامِي", "طَبِيبَةٌ",
+    
+    // 6+ letters
+    "اِسْتِقْلَالٌ", "مُسْتَشْفَى", "مُسْتَقْبَلٌ", "اِبْتِسَامَةٌ", "اِمْتِحَانَاتٌ",
+    "إِسْلَامِيَّةٌ", "مُهَنْدِسُونَ", "مُسْتَخْدِمِينَ", "مُوَصَّلَاتٌ", "تَكْنُولُوجِيَا", 
+    "إِسْتِعْدَادٌ", "مُسْتَحِيلٌ", "اِسْتِخْدَامٌ", "اِسْتِمَاعٌ", "مُسْتَوْصَفٌ"
+];
+
+const colors = ["#ff4b2b", "#00d2ff", "#00ed70", "#ffb800", "#d100ff", "#ff007c"];
+
+function splitArabic(word) {
+    const result = [];
+    let current = "";
+    for (let char of word) {
+        if (/[\u064B-\u0652\u0654]/.test(char) || char === '\u0651') {
+            current += char;
+        } else {
+            if (current) result.push(current);
+            current = char;
+        }
+    }
+    if (current) result.push(current);
+    return result;
+}
+
+let levelsData = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+
+allWords.forEach(w => {
+    let len = splitArabic(w).length;
+    if (len <= 2) levelsData[1].push(w);
+    else if (len === 3) levelsData[2].push(w); 
+    else if (len === 4) levelsData[3].push(w);
+    else if (len === 5) levelsData[4].push(w);
+    else levelsData[5].push(w);
+});
+
+let currentMode = 'practice';
+let currentLevel = 1;
+let currentWords = [];
+let wordIndex = 0;
+let timerInterval = null;
+let selectedTime = 60;
+let timeLeft = 60;
+let animationTimeout = null;
+let wordsReadThisSession = new Set();
+
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    
+    if (screenId !== 'game-screen') {
+        clearInterval(timerInterval);
+    }
+}
+
+function selectMode(mode) {
+    currentMode = mode;
+    if (mode === 'time') {
+        showScreen('time-menu');
+    } else {
+        showScreen('level-menu');
+    }
+}
+
+function selectTime(seconds) {
+    selectedTime = seconds;
+    showScreen('level-menu');
+}
+
+function backFromLevels() {
+    if (currentMode === 'time') {
+        showScreen('time-menu');
+    } else {
+        showScreen('main-menu');
+    }
+}
+
+function startLevel(level) {
+    currentLevel = level;
+    if (level === 6) {
+        currentWords = [...allWords].sort(() => Math.random() - 0.5);
+    } else {
+        currentWords = [...levelsData[level]].sort(() => Math.random() - 0.5);
+    }
+    
+    wordIndex = 0;
+    wordsReadThisSession.clear();
+    
+    showScreen('game-screen');
+    updateWordCounter();
+    
+    if (currentMode === 'time') {
+        document.getElementById('timer').classList.remove('hidden');
+        timeLeft = selectedTime;
+        document.getElementById('time-left').textContent = timeLeft;
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('time-left').textContent = timeLeft;
+            if (timeLeft <= 0) {
+                endTimeMode();
+            }
+        }, 1000);
+    } else {
+        document.getElementById('timer').classList.add('hidden');
+        clearInterval(timerInterval);
+    }
+    
+    showWord();
+}
+
+function endTimeMode() {
+    clearInterval(timerInterval);
+    document.getElementById('final-score').textContent = wordsReadThisSession.size;
+    document.getElementById('time-up-modal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('time-up-modal').classList.remove('active');
+}
+
+function updateWordCounter() {
+    document.getElementById('word-counter').textContent = `Words: ${wordsReadThisSession.size}`;
+}
+
+function showWord() {
+    if (currentWords.length === 0) return;
+    const word = currentWords[wordIndex];
+    wordsReadThisSession.add(word);
+    updateWordCounter();
+
+    const sepDiv = document.getElementById("separated");
+    const conDiv = document.getElementById("connected");
+
+    sepDiv.innerHTML = "";
+    conDiv.innerHTML = "";
+    conDiv.style.display = "none";
+    
+    if (animationTimeout) clearTimeout(animationTimeout);
+
+    const letters = splitArabic(word);
+
+    letters.forEach((unit, i) => {
+        let span = document.createElement("span");
+        span.textContent = unit;
+        span.style.color = colors[i % colors.length];
+        sepDiv.appendChild(span);
+    });
+
+    animationTimeout = setTimeout(() => {
+        conDiv.style.display = "inline-block";
+        letters.forEach((unit, i) => {
+            let span = document.createElement("span");
+            span.textContent = unit;
+            span.style.color = colors[i % colors.length];
+            conDiv.appendChild(span);
+        });
+    }, 1200);
+}
+
+function nextWord() {
+    if (wordIndex < currentWords.length - 1) {
+        wordIndex++;
+    } else {
+        wordIndex = 0; 
+    }
+    showWord();
+}
+
+function prevWord() {
+    if (wordIndex > 0) {
+        wordIndex--;
+    } else {
+        wordIndex = currentWords.length - 1; 
+    }
+    showWord();
+}
+
+// Keyboard controls
+document.addEventListener('keydown', (e) => {
+    const gameActive = document.getElementById('game-screen').classList.contains('active');
+    const modalActive = document.getElementById('time-up-modal').classList.contains('active');
+    
+    if (gameActive && !modalActive) {
+        if (e.key === 'ArrowRight') {
+            nextWord();
+        } else if (e.key === 'ArrowLeft') {
+            prevWord();
+        }
+    }
+});
+</script>
+
+</body>
+</html>
