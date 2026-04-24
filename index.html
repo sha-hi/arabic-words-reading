@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arabic Reading Trainer</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root {
     --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
@@ -363,6 +364,7 @@ h2 {
 
 <div id="main-menu" class="screen active">
     <h1>Arabic Reader<br><span style="color:var(--accent)">Pro</span></h1>
+    <input type="text" id="student-name" placeholder="Enter your name" style="padding: 15px; border-radius: 15px; border: none; font-size: 20px; font-family: inherit; margin-bottom: 20px; text-align: center; width: 80%; max-width: 300px; outline: none; box-shadow: var(--card-shadow);">
     <button class="mode-btn" onclick="selectMode('practice')">
         Practice Mode
         <small>Unlimited Time • Learn at your own pace</small>
@@ -370,6 +372,10 @@ h2 {
     <button class="mode-btn time" onclick="selectMode('time')">
         Time Mode
         <small>Choose your time • Beat the clock!</small>
+    </button>
+    <button class="mode-btn" onclick="showLocked(this)" style="background: rgba(0, 0, 0, 0.3);">
+        Shahid Rahmani Learning Hub
+        <small>Premium Content</small>
     </button>
 </div>
 
@@ -416,11 +422,19 @@ h2 {
 </div>
 
 <div id="time-up-modal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" id="score-card">
         <h2>Time's Up! ⏰</h2>
-        <p>You reviewed <span id="final-score" style="color:#e74c3c; font-size: 36px; font-weight:800;">0</span> words!</p>
-        <button onclick="closeModal(); showScreen('level-menu')">Choose Level</button>
-        <button onclick="closeModal(); startLevel(currentLevel)">Try Again ↻</button>
+        <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 20px; margin-bottom: 20px;">
+            <p style="margin: 10px 0; font-size: 24px;"><strong>Name:</strong> <span id="display-name">Guest</span></p>
+            <p style="margin: 10px 0; font-size: 24px;"><strong>Level:</strong> <span id="display-level">1</span></p>
+            <p style="margin: 10px 0; font-size: 24px;"><strong>Time:</strong> <span id="display-time">60</span>s</p>
+            <p style="margin: 10px 0; font-size: 28px;"><strong>Score:</strong> <span id="final-score" style="color:#e74c3c; font-weight:800;">0</span></p>
+        </div>
+        <div id="modal-buttons">
+            <button onclick="shareScore()" style="background: #27ae60; color: white;">Share Result 📸</button>
+            <button onclick="closeModal(); showScreen('level-menu')">Choose Level</button>
+            <button onclick="closeModal(); startLevel(currentLevel)">Try Again ↻</button>
+        </div>
     </div>
 </div>
 
@@ -515,6 +529,14 @@ function selectTime(seconds) {
     showScreen('level-menu');
 }
 
+function showLocked(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "🔒 Locked<br><small>Coming soon!</small>";
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+    }, 2000);
+}
+
 function backFromLevels() {
     if (currentMode === 'time') {
         showScreen('time-menu');
@@ -560,7 +582,46 @@ function startLevel(level) {
 function endTimeMode() {
     clearInterval(timerInterval);
     document.getElementById('final-score').textContent = wordsReadThisSession.size;
+    
+    const nameVal = document.getElementById('student-name').value;
+    document.getElementById('display-name').textContent = nameVal ? nameVal : 'Guest';
+    document.getElementById('display-level').textContent = currentLevel === 6 ? 'All Random' : currentLevel;
+    document.getElementById('display-time').textContent = selectedTime;
+
     document.getElementById('time-up-modal').classList.add('active');
+}
+
+function shareScore() {
+    const scoreCard = document.getElementById('score-card');
+    const btns = document.getElementById('modal-buttons');
+    btns.style.display = 'none'; // hide buttons for screenshot
+    
+    html2canvas(scoreCard, { scale: 2 }).then(canvas => {
+        btns.style.display = 'block'; // show buttons again
+        
+        canvas.toBlob(blob => {
+            if (navigator.share) {
+                const file = new File([blob], "arabic_score.png", { type: "image/png" });
+                navigator.share({
+                    title: 'My Arabic Reading Score!',
+                    text: 'Look at my score in the Arabic Reading Game!',
+                    files: [file]
+                }).catch(err => {
+                    console.log('Share failed:', err);
+                    fallbackDownload(canvas);
+                });
+            } else {
+                fallbackDownload(canvas);
+            }
+        });
+    });
+}
+
+function fallbackDownload(canvas) {
+    const link = document.createElement('a');
+    link.download = 'arabic_score.png';
+    link.href = canvas.toDataURL();
+    link.click();
 }
 
 function closeModal() {
